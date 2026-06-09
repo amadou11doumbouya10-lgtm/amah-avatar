@@ -1,11 +1,11 @@
 /* ─────────────────────────────────────────────────────────────
-   The Amah — Netlify Serverless Function
+   The Amah — Netlify Serverless Function (Groq)
    Cache la clé API côté serveur pour usage public sans exposer la clé.
 
    SETUP :
    1. Déploie sur Netlify
    2. Dans Netlify → Site settings → Environment variables :
-      Ajoute : ANTHROPIC_API_KEY = sk-ant-...
+      Ajoute : GROQ_API_KEY = gsk_...
    3. Dans index.html, mets :
       CONFIG.apiEndpoint = '/.netlify/functions/chat'
 ───────────────────────────────────────────────────────────── */
@@ -33,6 +33,9 @@ RÈGLES ABSOLUES :
 - Garde toujours un mystère doux
 - Si l'utilisateur t'écrit en anglais, réponds en anglais avec le même style
 - Si quelqu'un dit son prénom, mémorise-le et utilise-le parfois, naturellement`;
+
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
 const RATE_LIMIT = new Map();
 
@@ -71,7 +74,7 @@ exports.handler = async (event) => {
     };
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.GROQ_API_KEY) {
     return {
       statusCode: 500,
       headers,
@@ -94,23 +97,33 @@ exports.handler = async (event) => {
       ? persona
       : PERSONA;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(GROQ_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: GROQ_MODEL,
         max_tokens: 400,
-        system: systemPrompt,
-        messages: messages.slice(-20),
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages.slice(-20),
+        ],
       }),
     });
 
     const data = await response.json();
-    return { statusCode: 200, headers, body: JSON.stringify(data) };
+
+    // Convertir format Groq → format Anthropic (transparent pour le client)
+    const text = data.choices?.[0]?.message?.content || '';
+    const anthropicCompat = {
+      content: [{ type: 'text', text }],
+      model: GROQ_MODEL,
+      stop_reason: 'end_turn',
+    };
+
+    return { statusCode: 200, headers, body: JSON.stringify(anthropicCompat) };
 
   } catch (err) {
     return {
