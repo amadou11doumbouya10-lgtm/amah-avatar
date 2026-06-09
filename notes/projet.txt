@@ -1,0 +1,267 @@
+================================================================
+  THE AMAH — AVATAR PERSONA CHATBOT + AGENT IA
+  Notes de projet — créé le 28/05/2026
+================================================================
+
+----------------------------------------------------------------
+  C'EST QUOI CE PROJET ?
+----------------------------------------------------------------
+
+Un avatar IA public qui représente la marque "The Amah" sur
+le web et les réseaux sociaux. Il combine deux fonctions :
+
+  MODE CHATBOT  → Les visiteurs lui parlent directement
+  MODE AGENT    → Il enregistre, analyse et rapporte tout
+
+Créé dans le cadre de l'écosystème Theamah :
+  → Theamah+ (site streaming)
+  → Theamah (marque tech)
+  → TikTok cyber content
+
+
+----------------------------------------------------------------
+  STRUCTURE DU PROJET
+----------------------------------------------------------------
+
+avatar Amah/
+├── index.html                  ← Chatbot public (visiteurs)
+├── admin.html                  ← Dashboard agent (toi seul)
+├── netlify.toml                ← Config déploiement Netlify
+├── netlify/
+│   └── functions/
+│       └── chat.js             ← API proxy sécurisé
+└── notes/
+    └── projet.txt              ← CE FICHIER
+
+
+----------------------------------------------------------------
+  FICHIER : index.html
+----------------------------------------------------------------
+
+C'est la page principale que voient les visiteurs.
+
+FONCTIONNALITES :
+  - Chatbot avec la persona "The Amah"
+  - Design sombre/or, typographie élégante (Cormorant + DM Mono)
+  - Effet typewriter sur les réponses de l'IA
+  - 5 boutons de démarrage rapide (starter chips)
+  - Compteur de messages : 0 à 20 par session
+  - Alerte à 16/20, blocage à 20/20
+  - Bouton RESET pour nouvelle conversation
+  - Toast de notification
+  - Responsive mobile
+
+PERSONA DE L'AMAH (dans le script) :
+  - Parle de streaming, tech, IA, cybersécurité, lifestyle
+  - Redirige vers Theamah+ pour les films/séries
+  - Mentionne Theamah comme créateur
+  - Style : court, dense, élégant, mystérieux
+  - Jamais de listes, jamais de "Bonjour !"
+  - Max 4 phrases par réponse
+
+MODELE IA UTILISE :
+  - claude-sonnet-4-6 (Anthropic)
+  - Max 400 tokens par réponse
+  - Fenêtre historique : 10 derniers échanges
+
+COMMENT ACTIVER LE CHAT :
+  Option A (privé) : mettre ta clé dans CONFIG.apiKey
+  Option B (public) : déployer sur Netlify + remplir CONFIG.apiEndpoint
+
+LOGGING AUTOMATIQUE (côté agent) :
+  - Chaque échange est sauvegardé dans le navigateur
+  - Clé localStorage : "amah_logs"
+  - Format : { id, sessionId, date, user, ai }
+  - Limite : 1000 entrées max
+  - Visible dans admin.html
+
+
+----------------------------------------------------------------
+  FICHIER : admin.html
+----------------------------------------------------------------
+
+C'est ton tableau de bord personnel. Les visiteurs n'y ont
+pas accès.
+
+ACCES :
+  - URL : ton-site.com/admin.html
+  - Mot de passe : amah2026
+    (à changer dans le script : const ADMIN_PASSWORD = '...')
+
+CE QU'ON VOIT DANS LE DASHBOARD :
+  [ STATS ]
+    - Messages totaux enregistrés
+    - Nombre de sessions uniques
+    - Messages reçus aujourd'hui
+    - Date et heure du dernier message
+
+  [ SUJETS POPULAIRES ]
+    - Détection automatique des mots-clés dans les conversations
+    - Sujets suivis : film, série, streaming, IA, tech, cyber,
+      mode, voyage, Theamah, musique, skincare, lecture
+    - Classés par fréquence
+
+  [ CONVERSATIONS RECENTES ]
+    - Affichage des 20 dernières sessions
+    - Clic pour déplier chaque conversation complète
+    - Voir exactement ce que les visiteurs ont dit
+
+  [ RAPPORT EMAIL ]
+    - Email pré-rempli : mkaba6181@gmail.com
+    - Bouton pour envoyer un résumé par email
+    - Contient : stats + 10 dernières conversations
+
+  [ BOUTONS ]
+    - EXPORTER : télécharge un fichier JSON de toutes les conversations
+    - EFFACER : supprime toutes les données (confirmation requise)
+    - ← CHAT : retour vers le chatbot
+
+
+----------------------------------------------------------------
+  FICHIER : netlify/functions/chat.js
+----------------------------------------------------------------
+
+Ce fichier permet de rendre le chatbot 100% public sans que
+les visiteurs aient besoin d'une clé API.
+
+COMMENT CA MARCHE :
+  1. Tu déploies le projet sur Netlify (gratuit)
+  2. Tu ajoutes ta clé API dans les paramètres Netlify
+  3. Les visiteurs arrivent sur index.html et chattent
+     directement — sans aucune clé requise de leur part
+
+PROTECTION INCLUSE :
+  - Rate limiting : 30 messages max par IP par heure
+  - La clé API ne jamais visible dans le code public
+  - Headers de sécurité (CORS, X-Frame-Options)
+
+VARIABLE D'ENVIRONNEMENT A CONFIGURER :
+  Nom     : ANTHROPIC_API_KEY
+  Valeur  : sk-ant-... (ta vraie clé)
+
+
+----------------------------------------------------------------
+  FICHIER : netlify.toml
+----------------------------------------------------------------
+
+Fichier de configuration pour le déploiement sur Netlify.
+  - Indique où sont les fonctions (netlify/functions/)
+  - Ajoute des headers de sécurité sur tout le site
+  - Cache admin.html des moteurs de recherche (noindex)
+
+
+----------------------------------------------------------------
+  ETAPES POUR METTRE EN LIGNE (NETLIFY)
+----------------------------------------------------------------
+
+  ETAPE 1 — Préparer le dossier
+    → S'assurer que tous les fichiers sont dans "avatar Amah/"
+
+  ETAPE 2 — Créer un compte Netlify
+    → https://netlify.com (gratuit)
+    → Se connecter avec GitHub ou email
+
+  ETAPE 3 — Déployer
+    → Netlify → "Add new site" → "Deploy manually"
+    → Glisser-déposer le dossier "avatar Amah"
+
+  ETAPE 4 — Ajouter la clé API
+    → Netlify → ton site → Site settings
+    → Environment variables → Add variable
+    → Nom : ANTHROPIC_API_KEY
+    → Valeur : ta clé sk-ant-...
+
+  ETAPE 5 — Activer la fonction dans index.html
+    → Ouvrir index.html
+    → Chercher : CONFIG.apiEndpoint = ''
+    → Remplacer par : CONFIG.apiEndpoint = '/.netlify/functions/chat'
+
+  ETAPE 6 — Redéployer
+    → Re-glisser le dossier sur Netlify
+
+  ETAPE 7 — Tester
+    → Aller sur l'URL Netlify générée
+    → Le chat doit s'ouvrir directement sans demander de clé
+
+
+----------------------------------------------------------------
+  PHASE CHATBOT — FAIT
+----------------------------------------------------------------
+
+  [X] Design élégant sombre/or
+  [X] Persona The Amah connectée à Theamah+ et Theamah
+  [X] Effet typewriter sur les réponses
+  [X] Starter chips (5 boutons de démarrage)
+  [X] Compteur de messages avec limite
+  [X] Bouton reset conversation
+  [X] Logging des conversations dans le navigateur
+  [X] Modèle IA à jour (claude-sonnet-4-6)
+  [X] Protection XSS (escHtml)
+  [X] Responsive mobile
+
+
+----------------------------------------------------------------
+  PHASE AGENT — FAIT
+----------------------------------------------------------------
+
+  [X] Dashboard protégé par mot de passe
+  [X] Stats en temps réel
+  [X] Détection automatique des sujets populaires
+  [X] Historique des conversations consultable
+  [X] Export JSON des données
+  [X] Envoi rapport email
+  [X] Effacement des données avec confirmation
+
+
+----------------------------------------------------------------
+  PROCHAINES ETAPES POSSIBLES
+----------------------------------------------------------------
+
+  [ ] Déploiement Netlify (rendre public)
+  [ ] Connecter les DMs Instagram via API Meta
+  [ ] Connecter les commentaires TikTok
+  [ ] Ajouter une vraie photo avatar (Midjourney / HeyGen)
+  [ ] Ajouter la voix (ElevenLabs)
+  [ ] Page de vente pour revendre ce service à d'autres
+  [ ] Notifications push quand quelqu'un chatte
+  [ ] Base de données en ligne (Supabase) au lieu de localStorage
+
+
+----------------------------------------------------------------
+  INFOS TECHNIQUES
+----------------------------------------------------------------
+
+  Langage        : HTML / CSS / JavaScript (vanilla, aucun framework)
+  IA             : Claude Sonnet 4.6 (Anthropic)
+  Police         : Cormorant Garamond + DM Mono (Google Fonts)
+  Stockage local : localStorage (conversations) + sessionStorage (clé)
+  Backend        : Netlify Functions (Node.js)
+  Déploiement    : Netlify (gratuit jusqu'à 100 Go/mois)
+  Coût IA        : ~0.001$ par message (API Anthropic)
+
+
+----------------------------------------------------------------
+  MOTS DE PASSE ET ACCES
+----------------------------------------------------------------
+
+  Dashboard admin  : amah2026
+  Email projet     : mkaba6181@gmail.com
+  Dossier local    : Desktop\Projets\avatar Amah\
+
+
+----------------------------------------------------------------
+  HISTORIQUE DES SESSIONS
+----------------------------------------------------------------
+
+  28/05/2026 — Session 1
+    - Idée Avatar Persona Chatbot discutée
+    - Différence chatbot vs agent IA expliquée
+    - Analyse du fichier index.html original (Downloads/)
+    - Améliorations proposées et validées
+    - index.html reécrit avec toutes les améliorations
+    - admin.html créé (dashboard agent)
+    - chat.js créé (Netlify function)
+    - netlify.toml créé
+    - Dossier "notes" créé avec ce fichier
+
+================================================================

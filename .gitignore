@@ -1,0 +1,9 @@
+# Clé API — ne jamais commiter
+API Claude/
+
+# Build Netlify local
+.netlify/
+
+# OS
+Thumbs.db
+.DS_Store

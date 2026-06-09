@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Amah — Dashboard Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080807;
+      --surface: #101010;
+      --surface2: #161614;
+      --border: #1e1e1c;
+      --border2: #2a2a27;
+      --gold: #c8a96e;
+      --gold-dim: #7a5f38;
+      --gold-faint: #2a1f10;
+      --text: #e5dfd6;
+      --text2: #9a9488;
+      --text3: #4a4842;
+      --error: #a05050;
+      --green: #4a7a4a;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    #app {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 0 60px;
+    }
+
+    /* ── LOCK SCREEN ── */
+    #lockScreen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      text-align: center;
+      padding: 32px;
+    }
+    .lock-line {
+      width: 1px; height: 36px;
+      background: linear-gradient(to bottom, transparent, var(--gold-dim));
+    }
+    .lock-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--gold);
+      letter-spacing: 0.06em;
+    }
+    .lock-sub {
+      font-size: 10px;
+      color: var(--text3);
+      letter-spacing: 0.15em;
+    }
+    .lock-input {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 10px 16px;
+      border-radius: 2px;
+      outline: none;
+      width: 240px;
+      text-align: center;
+      letter-spacing: 0.1em;
+      transition: border-color 0.2s;
+    }
+    .lock-input:focus { border-color: var(--gold-dim); }
+    .btn-unlock {
+      background: none;
+      border: 1px solid var(--gold-dim);
+      color: var(--gold);
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      padding: 9px 26px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    .btn-unlock:hover { background: var(--gold-faint); border-color: var(--gold); }
+    #lockError {
+      font-size: 10px;
+      color: var(--error);
+      min-height: 14px;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      padding: 20px 32px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      animation: fadeDown 0.5s ease both;
+    }
+    .avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: 1px solid var(--gold-dim);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px; font-weight: 300;
+      color: var(--gold); flex-shrink: 0;
+    }
+    .header-meta { flex: 1; }
+    .header-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px; font-weight: 300;
+      letter-spacing: 0.12em; color: var(--text);
+    }
+    .header-sub { font-size: 9px; letter-spacing: 0.18em; color: var(--text3); margin-top: 2px; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+
+    .btn-action {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+      font-size: 9px; letter-spacing: 0.14em;
+      padding: 5px 12px; border-radius: 2px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-action:hover { border-color: var(--gold-dim); color: var(--gold); }
+    .btn-action.primary {
+      border-color: var(--gold-dim);
+      color: var(--gold);
+    }
+    .btn-action.primary:hover { background: var(--gold-faint); }
+    .btn-action.danger:hover { border-color: var(--error); color: var(--error); }
+
+    /* ── CONTENT ── */
+    .content { padding: 28px 32px; display: flex; flex-direction: column; gap: 28px; }
+
+    /* ── STATS GRID ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      animation: fadeUp 0.4s ease 0.1s both;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 16px 18px;
+      border-radius: 2px;
+    }
+    .stat-label {
+      font-size: 8px; letter-spacing: 0.22em;
+      color: var(--text3); margin-bottom: 8px;
+    }
+    .stat-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px; font-weight: 300;
+      color: var(--gold); line-height: 1;
+    }
+    .stat-sub {
+      font-size: 9px; color: var(--text3);
+      margin-top: 4px; letter-spacing: 0.06em;
+    }
+
+    /* ── SECTION ── */
+    .section {
+      animation: fadeUp 0.4s ease 0.2s both;
+    }
+    .section-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-title {
+      font-size: 9px; letter-spacing: 0.22em; color: var(--text3);
+    }
+
+    /* ── TOPICS ── */
+    .topics-wrap { display: flex; flex-wrap: wrap; gap: 7px; }
+    .topic-tag {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      font-size: 10px; letter-spacing: 0.06em;
+      padding: 4px 10px; border-radius: 2px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .topic-count {
+      color: var(--gold-dim);
+      font-size: 9px;
+    }
+    .no-data {
+      font-size: 11px; color: var(--text3);
+      font-style: italic; letter-spacing: 0.06em;
+    }
+
+    /* ── CONVERSATIONS ── */
+    .conv-list { display: flex; flex-direction: column; gap: 8px; }
+    .conv-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .conv-item:hover { border-color: var(--border2); }
+    .conv-item.open { border-color: var(--gold-dim); }
+    .conv-head {
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .conv-date { font-size: 9px; color: var(--text3); letter-spacing: 0.08em; flex-shrink: 0; }
+    .conv-preview { font-size: 11px; color: var(--text2); flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .conv-toggle { font-size: 10px; color: var(--text3); flex-shrink: 0; }
+
+    .conv-body { display: none; border-top: 1px solid var(--border); }
+    .conv-item.open .conv-body { display: block; }
+    .conv-msg {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px; line-height: 1.6;
+    }
+    .conv-msg:last-child { border-bottom: none; }
+    .conv-role {
+      font-size: 8px; letter-spacing: 0.2em;
+      margin-bottom: 4px;
+    }
+    .conv-role.user { color: var(--text3); }
+    .conv-role.ai   { color: var(--gold-dim); }
+    .conv-text.ai {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 14px; font-style: italic; color: #c0b8ae;
+    }
+    .conv-text.user { color: var(--text2); }
+
+    /* ── EMAIL SECTION ── */
+    .email-form { display: flex; flex-direction: column; gap: 10px; }
+    .email-input {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 9px 13px; border-radius: 2px;
+      outline: none; transition: border-color 0.2s;
+      max-width: 360px;
+    }
+    .email-input:focus { border-color: var(--gold-dim); }
+    .email-input::placeholder { color: var(--text3); }
+    .email-note { font-size: 10px; color: var(--text3); letter-spacing: 0.05em; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      font-size: 10px; letter-spacing: 0.1em;
+      padding: 8px 18px; border-radius: 2px;
+      opacity: 0; transition: all 0.3s;
+      pointer-events: none; z-index: 100;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.success { border-color: var(--green); color: #7ab87a; }
+    #toast.error   { border-color: var(--error); color: #c07070; }
+
+    .hidden { display: none !important; }
+
+    @keyframes fadeUp   { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+    @keyframes fadeDown { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform: translateY(0); } }
+
+    @media (max-width: 600px) {
+      .content { padding: 18px 16px; }
+      .header  { padding: 14px 16px 12px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div class="lock-line"></div>
+  <p class="lock-title">Espace Agent</p>
+  <p class="lock-sub">ACCÈS RÉSERVÉ — THE AMAH DASHBOARD</p>
+  <input class="lock-input" type="password" id="pwInput"
+    placeholder="mot de passe" autocomplete="off"
+    onkeydown="if(event.key==='Enter') unlock()" />
+  <button class="btn-unlock" onclick="unlock()">ENTRER</button>
+  <p id="lockError"></p>
+</div>
+
+<div id="app" class="hidden">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="avatar">A</div>
+    <div class="header-meta">
+      <div class="header-title">The Amah — Agent</div>
+      <div class="header-sub">DASHBOARD &nbsp;·&nbsp; CONVERSATIONS &nbsp;·&nbsp; STATS</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-action" onclick="exportData()">EXPORTER</button>
+      <button class="btn-action danger" onclick="confirmClear()">EFFACER</button>
+      <button class="btn-action" onclick="location.href='index.html'">← CHAT</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- STATS -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card">
+        <div class="stat-label">MESSAGES TOTAUX</div>
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-sub">échanges enregistrés</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">SESSIONS</div>
+        <div class="stat-value" id="statSessions">0</div>
+        <div class="stat-sub">conversations uniques</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">AUJOURD'HUI</div>
+        <div class="stat-value" id="statToday">0</div>
+        <div class="stat-sub">messages ce jour</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">DERNIER MESSAGE</div>
+        <div class="stat-value" id="statLastDate" style="font-size:16px;margin-top:4px">—</div>
+        <div class="stat-sub" id="statLastTime"></div>
+      </div>
+    </div>
+
+    <!-- SUJETS POPULAIRES -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">SUJETS POPULAIRES</span>
+      </div>
+      <div class="topics-wrap" id="topicsWrap">
+        <span class="no-data">Aucune conversation enregistrée.</span>
+      </div>
+    </div>
+
+    <!-- CONVERSATIONS RECENTES -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">CONVERSATIONS RÉCENTES</span>
+        <span id="convCount" style="font-size:9px;color:var(--text3);letter-spacing:.1em"></span>
+      </div>
+      <div class="conv-list" id="convList">
+        <span class="no-data">Aucune conversation enregistrée.</span>
+      </div>
+    </div>
+
+    <!-- RAPPORT EMAIL -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">RAPPORT EMAIL</span>
+      </div>
+      <div class="email-form">
+        <p class="email-note">Envoie un résumé des conversations à ton adresse email.</p>
+        <input class="email-input" type="email" id="emailInput"
+          placeholder="ton@email.com" value="mkaba6181@gmail.com" />
+        <div>
+          <button class="btn-action primary" onclick="sendReport()">ENVOYER LE RAPPORT</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  /* ─────────────────────────────────────
+     CONFIG
+  ───────────────────────────────────── */
+  const ADMIN_PASSWORD = 'amah2026';
+
+  /* ─────────────────────────────────────
+     LOCK
+  ───────────────────────────────────── */
+  function unlock() {
+    const val = document.getElementById('pwInput').value;
+    if (val === ADMIN_PASSWORD) {
+      document.getElementById('lockScreen').style.display = 'none';
+      document.getElementById('app').classList.remove('hidden');
+      loadDashboard();
+    } else {
+      document.getElementById('lockError').textContent = 'Mot de passe incorrect.';
+      document.getElementById('pwInput').value = '';
+      document.getElementById('pwInput').focus();
+    }
+  }
+
+  /* ─────────────────────────────────────
+     LOAD DASHBOARD
+  ───────────────────────────────────── */
+  function loadDashboard() {
+    const logs     = JSON.parse(localStorage.getItem('amah_logs')     || '[]');
+    const sessions = JSON.parse(localStorage.getItem('amah_sessions') || '{}');
+
+    renderStats(logs, sessions);
+    renderTopics(logs);
+    renderConversations(logs);
+  }
+
+  /* ─────────────────────────────────────
+     STATS
+  ───────────────────────────────────── */
+  function renderStats(logs, sessions) {
+    const today = new Date().toISOString().slice(0, 10);
+    const todayCount = logs.filter(l => l.date && l.date.startsWith(today)).length;
+    const sessionCount = Object.keys(sessions).length;
+
+    document.getElementById('statTotal').textContent    = logs.length;
+    document.getElementById('statSessions').textContent = sessionCount;
+    document.getElementById('statToday').textContent    = todayCount;
+
+    if (logs.length > 0) {
+      const last = new Date(logs[logs.length - 1].date);
+      document.getElementById('statLastDate').textContent = last.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+      document.getElementById('statLastTime').textContent = last.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+  }
+
+  /* ─────────────────────────────────────
+     TOPICS
+  ───────────────────────────────────── */
+  const KEYWORDS = [
+    ['film', 'films'], ['série', 'séries'], ['streaming', 'theamah'],
+    ['ia', 'intelligence artificielle', 'chatgpt', 'claude'],
+    ['tech', 'technologie'], ['cyber', 'sécurité', 'hack'],
+    ['mode', 'style', 'vêtement'], ['voyage', 'travel'],
+    ['musique', 'music'],
+    ['skincare', 'beauté', 'soin'], ['livre', 'lecture'],
+  ];
+
+  function renderTopics(logs) {
+    const counts = {};
+    const wrap = document.getElementById('topicsWrap');
+
+    logs.forEach(log => {
+      const text = (log.user + ' ' + log.ai).toLowerCase();
+      KEYWORDS.forEach(group => {
+        const label = group[0];
+        if (group.some(kw => text.includes(kw))) {
+          counts[label] = (counts[label] || 0) + 1;
+        }
+      });
+    });
+
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    if (sorted.length === 0) return;
+
+    wrap.innerHTML = '';
+    sorted.forEach(([label, count]) => {
+      const tag = document.createElement('div');
+      tag.className = 'topic-tag';
+      tag.innerHTML = `${label} <span class="topic-count">${count}</span>`;
+      wrap.appendChild(tag);
+    });
+  }
+
+  /* ─────────────────────────────────────
+     CONVERSATIONS
+  ───────────────────────────────────── */
+  function renderConversations(logs) {
+    const list = document.getElementById('convList');
+    if (logs.length === 0) return;
+    list.innerHTML = '';
+
+    // Group by session
+    const bySession = {};
+    logs.forEach(log => {
+      if (!bySession[log.sessionId]) bySession[log.sessionId] = [];
+      bySession[log.sessionId].push(log);
+    });
+
+    const sessions = Object.entries(bySession).reverse().slice(0, 20);
+    document.getElementById('convCount').textContent = `${sessions.length} session(s)`;
+
+    sessions.forEach(([sid, msgs]) => {
+      const first = msgs[0];
+      const date  = new Date(first.date);
+      const dateStr = date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+      const item = document.createElement('div');
+      item.className = 'conv-item';
+      item.innerHTML = `
+        <div class="conv-head" onclick="toggleConv(this.parentElement)">
+          <span class="conv-date">${dateStr}</span>
+          <span class="conv-preview">${escHtml(first.user)}</span>
+          <span class="conv-toggle">▸ ${msgs.length} msg</span>
+        </div>
+        <div class="conv-body">
+          ${msgs.map(m => `
+            <div class="conv-msg">
+              <div class="conv-role user">TOI</div>
+              <div class="conv-text user">${escHtml(m.user)}</div>
+            </div>
+            <div class="conv-msg" style="background:var(--surface2)">
+              <div class="conv-role ai">THE AMAH</div>
+              <div class="conv-text ai">${escHtml(m.ai)}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  function toggleConv(item) {
+    item.classList.toggle('open');
+    const toggle = item.querySelector('.conv-toggle');
+    const count  = toggle.textContent.match(/\d+/)[0];
+    toggle.textContent = item.classList.contains('open')
+      ? `▾ ${count} msg`
+      : `▸ ${count} msg`;
+  }
+
+  /* ─────────────────────────────────────
+     EMAIL RAPPORT
+  ───────────────────────────────────── */
+  function sendReport() {
+    const email = document.getElementById('emailInput').value.trim();
+    if (!email) { showToast('Entre une adresse email', 'error'); return; }
+
+    const logs     = JSON.parse(localStorage.getItem('amah_logs')     || '[]');
+    const sessions = JSON.parse(localStorage.getItem('amah_sessions') || '{}');
+    const today    = new Date().toISOString().slice(0, 10);
+    const todayMsgs = logs.filter(l => l.date && l.date.startsWith(today));
+
+    const subject = encodeURIComponent(`[The Amah] Rapport du ${new Date().toLocaleDateString('fr-FR')}`);
+    const body = encodeURIComponent(
+      `RAPPORT THE AMAH — ${new Date().toLocaleDateString('fr-FR')}\n\n` +
+      `Messages totaux : ${logs.length}\n` +
+      `Sessions : ${Object.keys(sessions).length}\n` +
+      `Aujourd'hui : ${todayMsgs.length} messages\n\n` +
+      `--- DERNIÈRES CONVERSATIONS ---\n\n` +
+      logs.slice(-10).map(l =>
+        `[${new Date(l.date).toLocaleTimeString('fr-FR')}]\nVisiteur: ${l.user}\nAmah: ${l.ai}\n`
+      ).join('\n')
+    );
+
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+    showToast('Ouverture du client email...', 'success');
+  }
+
+  /* ─────────────────────────────────────
+     EXPORT
+  ───────────────────────────────────── */
+  function exportData() {
+    const logs = JSON.parse(localStorage.getItem('amah_logs') || '[]');
+    if (logs.length === 0) { showToast('Aucune donnée à exporter', 'error'); return; }
+
+    const json = JSON.stringify(logs, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `amah-conversations-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Export téléchargé', 'success');
+  }
+
+  /* ─────────────────────────────────────
+     CLEAR DATA
+  ───────────────────────────────────── */
+  function confirmClear() {
+    if (confirm('Effacer toutes les conversations ? Cette action est irréversible.')) {
+      localStorage.removeItem('amah_logs');
+      localStorage.removeItem('amah_sessions');
+      loadDashboard();
+      showToast('Données effacées', 'success');
+    }
+  }
+
+  /* ─────────────────────────────────────
+     TOAST
+  ───────────────────────────────────── */
+  let toastTimer;
+  function showToast(msg, type = '') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className   = 'show' + (type ? ' ' + type : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = ''; }, 2600);
+  }
+
+  /* ─────────────────────────────────────
+     HELPERS
+  ───────────────────────────────────── */
+  function escHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br>');
+  }
+</script>
+</body>
+</html>
