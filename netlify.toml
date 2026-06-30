@@ -14,7 +14,8 @@
 [[headers]]
   for = "/index.html"
   [headers.values]
-    Content-Security-Policy = "frame-ancestors 'self' http://localhost:3000 https://project-evo8u.vercel.app"
+    Content-Security-Policy = "frame-ancestors 'self' http://localhost:3000 https://project-evo8u.vercel.app https://*.vercel.app"
+    X-Frame-Options = "ALLOWALL"
 
 [[headers]]
   for = "/admin.html"
