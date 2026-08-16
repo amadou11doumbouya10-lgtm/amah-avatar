@@ -1,5 +1,7 @@
 # Clé API — ne jamais commiter
 API Claude/
+.env
+.env.*
 
 # Build Netlify local
 .netlify/

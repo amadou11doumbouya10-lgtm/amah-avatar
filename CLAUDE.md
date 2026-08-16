@@ -1,7 +1,9 @@
 # The Amah — Avatar Persona Chatbot + Agent IA
 
 ## Présentation du projet
-Avatar IA public représentant la marque "The Amah" de Theamah. Combine un chatbot élégant (face visiteurs) et un agent de surveillance (face propriétaire). Fait partie de l'écosystème Theamah / Theamah+.
+Avatar IA public représentant **Vision Amah**, société de solutions informatiques et IA basée à Conakry, Guinée (fondateur : Amadou Doumbouya). Combine un chatbot commercial élégant (face visiteurs — qualifie et convertit vers un échange avec Amadou) et un agent de surveillance (face propriétaire). Fait aussi partie de l'écosystème Theamah / Theamah+ (mentionné comme réalisation).
+
+**Live** : https://legendary-selkie-d298b7.netlify.app — intégré comme widget flottant `💬` dans Theamah+.
 
 ## Structure des fichiers
 ```
@@ -9,44 +11,47 @@ avatar Amah/
 ├── index.html                  ← Chatbot public (visiteurs)
 ├── admin.html                  ← Dashboard agent (propriétaire)
 ├── netlify.toml                ← Config déploiement Netlify
+├── README.md                   ← Vue d'ensemble publique du repo
 ├── netlify/
 │   └── functions/
-│       └── chat.js             ← API proxy sécurisé (cache la clé)
+│       └── chat.js             ← API proxy sécurisé (cache la clé, appelle Groq)
+├── API Claude/                 ← Clé API locale (ignorée par git, ne jamais commiter)
 └── notes/
-    └── projet.txt              ← Documentation complète du projet
+    └── projet.txt              ← Documentation historique (session 1, en partie obsolète)
 ```
 
 ## Accès et mots de passe
 - **Dashboard admin** : `amah2026` (ligne `const ADMIN_PASSWORD` dans admin.html)
 - **Email projet** : mkaba6181@gmail.com
-- **Modèle IA** : `claude-sonnet-4-6`
+- **Email contact commercial (persona)** : amadou11doumbouya10@gmail.com
+- **Modèle IA (public, via le proxy Netlify)** : `openai/gpt-oss-120b` sur **Groq** — voir `GROQ_MODEL` dans chat.js. Variable d'environnement Netlify requise : `GROQ_API_KEY` (plus `ANTHROPIC_API_KEY`). Remplace `llama-3.3-70b-versatile`, déprécié par Groq le 17/06/2026 et arrêté le 16/08/2026.
+- **Modèle IA (mode privé, clé directe)** : `claude-sonnet-4-6` — utilisé seulement si `CONFIG.apiEndpoint` est vide dans index.html (chemin de secours pour usage personnel, pas celui des visiteurs publics).
 
 ## CONFIG dans index.html
 ```javascript
 const CONFIG = {
   apiKey:        '',   // clé directe pour usage privé
-  apiEndpoint:   '',   // '/.netlify/functions/chat' après déploiement Netlify
-  model:         'claude-sonnet-4-6',
+  apiEndpoint:   '/.netlify/functions/chat',
+  model:         'claude-sonnet-4-6',  // valeur envoyée par le client, ignorée par chat.js (qui force GROQ_MODEL)
   maxMessages:   20,
   historyWindow: 10,
 };
 ```
 - Laisser `apiKey` vide → page demande la clé au visiteur
-- Remplir `apiEndpoint` après déploiement Netlify → plus aucune clé requise des visiteurs
+- `apiEndpoint` déjà actif → aucune clé requise des visiteurs en prod
 
-## Persona The Amah
-Définie dans la constante `PERSONA` de index.html ET chat.js (les deux doivent rester synchronisées).
-- Style : court, dense, élégant, mystérieux
-- Sujets : streaming, tech, IA, cybersécurité, lifestyle, mode
-- Redirige vers Theamah+ pour les films/séries
-- Mentionne Theamah comme créateur
-- Jamais de listes, jamais de "Bonjour !", max 4 phrases
+## Persona The Amah — "intelligence commerciale de Vision Amah"
+Définie dans la constante `PERSONA` de index.html ET chat.js (**les deux doivent rester synchronisées** — un désync a été trouvé et corrigé le 16/08/2026, chat.js étant resté sur une version antérieure pendant plusieurs commits).
+- Rôle : qualifier le besoin du visiteur et le convertir en contact avec Amadou (30 min gratuites)
+- Cite les réalisations Vision Amah (Theamah+, Amah Agent, Vertex Shop, Transport Agency, Ticketing Platform, Cyber Content Generator) comme preuves de compétence
+- Style : court (2-4 phrases), direct, élégant, jamais de listes, jamais de "Bonjour !"
+- Closing commercial varié en fin de réponse quand un besoin concret est exprimé, jamais à chaque message
+- Mélange naturel français/anglais, répond en anglais si on lui écrit en anglais
 
-## Déploiement Netlify (rendre public)
-1. Glisser le dossier sur netlify.com → "Deploy manually"
-2. Site settings → Environment variables → Ajouter `ANTHROPIC_API_KEY`
-3. Dans index.html : `CONFIG.apiEndpoint = '/.netlify/functions/chat'`
-4. Redéployer
+## Déploiement Netlify (déjà en place)
+1. Site settings → Environment variables → `GROQ_API_KEY` (pas `ANTHROPIC_API_KEY`)
+2. `CONFIG.apiEndpoint` déjà réglé sur `/.netlify/functions/chat` dans index.html
+3. `netlify deploy --prod` pour republier après changement
 
 ## Fonctionnement agent (localStorage)
 - `amah_logs` → tableau de tous les échanges `{ id, sessionId, date, user, ai }`
