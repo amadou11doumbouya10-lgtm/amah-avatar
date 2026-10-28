@@ -85,7 +85,7 @@ pas accès.
 
 ACCES :
   - URL : ton-site.com/admin.html
-  - Mot de passe : amah2026
+  - Mot de passe : *****
     (à changer dans le script : const ADMIN_PASSWORD = '...')
 
 CE QU'ON VOIT DANS LE DASHBOARD :
