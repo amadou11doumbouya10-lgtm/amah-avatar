@@ -21,7 +21,7 @@ avatar Amah/
 ```
 
 ## Accès et mots de passe
-- **Dashboard admin** : `amah2026` (ligne `const ADMIN_PASSWORD` dans admin.html)
+- **Dashboard admin** : `*****` (ligne `const ADMIN_PASSWORD` dans admin.html)
 - **Email projet** : mkaba6181@gmail.com
 - **Email contact commercial (persona)** : amadou11doumbouya10@gmail.com
 - **Modèle IA (public, via le proxy Netlify)** : `openai/gpt-oss-120b` sur **Groq** — voir `GROQ_MODEL` dans chat.js. Variable d'environnement Netlify requise : `GROQ_API_KEY` (plus `ANTHROPIC_API_KEY`). Remplace `llama-3.3-70b-versatile`, déprécié par Groq le 17/06/2026 et arrêté le 16/08/2026.
